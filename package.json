@@ -1,0 +1,54 @@
+{
+    "name": "mycoin",
+    "version": "0.0.0",
+    "description": "Unique cryptocurrency for learning",
+    "type": "module",
+    "engines": {
+        "node": ">= 18.12 <19"
+    },
+    "devDependencies": {
+        "@jest-mock/express": "^2.0.2",
+        "@types/body-parser": "^1.19.5",
+        "@types/command-line-args": "^5.2.3",
+        "@types/express": "^4.17.21",
+        "@types/inquirer": "^9.0.7",
+        "@types/jest": "~29.5",
+        "@types/node": "~18",
+        "@typescript-eslint/eslint-plugin": "~6.2",
+        "@typescript-eslint/parser": "~6.2",
+        "cross-env": "^7.0.3",
+        "eslint": "~8.46",
+        "eslint-config-prettier": "~9.0",
+        "eslint-plugin-jest": "~27.2",
+        "jest": "~29.6",
+        "prettier": "~3.0",
+        "rimraf": "~5.0",
+        "ts-api-utils": "~1.0",
+        "ts-jest": "~29.1",
+        "typescript": "~5.1"
+    },
+    "scripts": {
+        "start": "node build/src/main.js",
+        "clean": "rimraf coverage build tmp",
+        "prebuild": "npm run lint",
+        "build": "tsc -p tsconfig.json",
+        "build:watch": "tsc -w -p tsconfig.json",
+        "build:release": "npm run clean && tsc -p tsconfig.release.json",
+        "lint": "eslint . --ext .ts --ext .mts",
+        "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+        "prettier": "prettier --config .prettierrc --write .",
+        "test:watch": "jest --watch"
+    },
+    "author": "whtsht <whiteshirt0079@gmail.com>",
+    "license": "MIT",
+    "dependencies": {
+        "body-parser": "^1.20.2",
+        "express": "^4.18.2",
+        "inquirer": "^9.2.12",
+        "lowdb": "^6.1.1",
+        "tslib": "~2.6"
+    },
+    "volta": {
+        "node": "18.12.1"
+    }
+}
