@@ -7,11 +7,11 @@ export function route(db: Low<Data>): Route {
     return async (req, res) => {
         const requestTransaction = req.body as Transaction;
 
-        let [_, key] = db.data.publicKeys
+        const data = db.data.publicKeys
             .filter(([name, _]) => name == requestTransaction.from)
             .at(0);
 
-        if (!key) {
+        if (!data) {
             res.send(
                 JSON.stringify({
                     errorMessage:
@@ -21,6 +21,7 @@ export function route(db: Low<Data>): Route {
             return;
         }
 
+        const [_, key] = data;
         const publicKey = base64decode(key);
         const encoder = new TextEncoder();
 
