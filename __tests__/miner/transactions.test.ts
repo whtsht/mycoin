@@ -1,5 +1,5 @@
 import { JSONPreset } from "lowdb/node";
-import { Data, SendResult } from "../../src/miner/index.js";
+import { Data, SendResult, initialTransaction } from "../../src/miner/index.js";
 import * as transactions from "../../src/miner/transactions.js";
 import * as send from "../../src/miner/send.js";
 import { Request, Response } from "express";
@@ -8,7 +8,8 @@ import { jest } from "@jest/globals";
 const mockDB = () =>
     JSONPreset<Data>("/tmp/mock.db.json", {
         config: { portNumber: 0 },
-        transactions: [{ from: "__network__", to: "Risa", amount: 100 }],
+        transactions: [initialTransaction("Risa")],
+        publicKeys: [],
     });
 
 describe("transactions", () => {

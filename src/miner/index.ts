@@ -2,14 +2,17 @@ import { JSONPreset } from "lowdb/node";
 import express from "express";
 import fs from "node:fs";
 import bodyParser from "body-parser";
-import { config, integer } from "../inputUtility.js";
+import { config, portNumber } from "../inputUtility.js";
 import * as transactions from "./transactions.js";
 import * as send from "./send.js";
+import * as publicKey from "./publicKey.js";
 
 export type Transaction = {
     from: string;
     to: string;
     amount: number;
+    message: string;
+    signature: string;
 };
 
 export type SendResult = "OK" | { errorMessage: string };
@@ -19,6 +22,7 @@ type MinerConfig = { portNumber: number };
 export type Data = {
     config: MinerConfig;
     transactions: Transaction[];
+    publicKeys: [string, string][];
 };
 
 export type Route = (
@@ -28,14 +32,23 @@ export type Route = (
 
 const minerPath = (name: string) => `./miners/${name}.json`;
 
+export const initialTransaction = (name: string) => ({
+    from: "__network__",
+    to: name,
+    amount: 100,
+    message: `${name} get 100CT through mining`,
+    signature: "__sign__",
+});
+
 const getDB = (name: string) =>
     JSONPreset<Data>(minerPath(name), {
         config: { portNumber: 0 },
-        transactions: [{ from: "__network__", to: "Risa", amount: 100 }],
+        transactions: [initialTransaction(name)],
+        publicKeys: [],
     });
 
 async function createNewDB(name: string) {
-    const port = await integer(
+    const port = await portNumber(
         "Specify the full node port number",
         "Please enter a number (0 ~ 65535)",
     );
@@ -77,6 +90,9 @@ export async function miner(name: string) {
 
     // Transaction => SendResult
     app.post("/send", jsonParser, send.route(db));
+
+    // SendPublicKeyData => ResultSendPublicKey
+    app.post("/publicKey", jsonParser, publicKey.route(db));
 
     app.listen(port, () => {
         console.log(`Start on port ${port}.`);

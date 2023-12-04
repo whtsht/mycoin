@@ -22,6 +22,24 @@ export async function integer(
         message,
         validate(value) {
             let valid = !isNaN(parseInt(value));
+            return valid || errorMessage;
+        },
+        filter: Number,
+    });
+
+    return answer.data;
+}
+
+export async function portNumber(
+    message: string,
+    errorMessage: string,
+): Promise<number> {
+    const answer = await prompt({
+        type: "input",
+        name: "data",
+        message,
+        validate(value) {
+            let valid = !isNaN(parseInt(value));
             const port = parseInt(value);
             valid = valid && 0 <= port && port <= 65535;
             return valid || errorMessage;

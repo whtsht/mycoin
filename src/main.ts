@@ -1,6 +1,8 @@
 import { argv, exit } from "process";
 import { wallet } from "./wallet/index.js";
 import { miner } from "./miner/index.js";
+import { webcrypto } from "node:crypto";
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 function usage() {
     console.log("[Usage]\nyarn start ( wallet | miner ) <name> ");

@@ -1,11 +1,15 @@
 import { SendResult, Transaction } from "../miner/index.js";
 import fs from "node:fs";
 import { JSONPreset } from "lowdb/node";
-import { config, input, integer, list } from "../inputUtility.js";
+import * as ed from "@noble/ed25519";
+import { config, input, portNumber, list, integer } from "../inputUtility.js";
+import { ResultSendPublicKey, SendPublicKeyData } from "../miner/publicKey.js";
+import { base64decode, base64encode } from "../codec.js";
 
 type Wallet = {
     name: string;
     nodePortNumber: number;
+    privateKey: string;
 };
 
 const walletPath = (name: string) => `./wallets/${name}.json`;
@@ -14,10 +18,11 @@ const getDB = (name: string) =>
     JSONPreset<Wallet>(walletPath(name), {
         name,
         nodePortNumber: null,
+        privateKey: base64encode(ed.utils.randomPrivateKey()),
     });
 
-async function init(name: string) {
-    const port = await integer(
+async function init(name: string): Promise<boolean> {
+    const port = await portNumber(
         "Specify the full node port number",
         "Please enter a number",
     );
@@ -26,7 +31,30 @@ async function init(name: string) {
     db.data.nodePortNumber = port;
     await db.write();
 
-    console.log(`Wallet initialization completed on ${walletPath(name)}`);
+    const data: SendPublicKeyData = {
+        name,
+        publicKey: base64encode(
+            await ed.getPublicKeyAsync(base64decode(db.data.privateKey)),
+        ),
+    };
+
+    console.log("Sending the public key to the node ...");
+    const response = await fetch(`http://localhost:${port}/publicKey`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+    });
+    const result = (await response.json()) as ResultSendPublicKey;
+
+    if (result !== "OK") {
+        console.log(result.errorMessage);
+        return false;
+    } else {
+        console.log(`Wallet initialization completed on ${walletPath(name)}`);
+        return true;
+    }
 }
 
 async function transactions(port: number) {
@@ -43,7 +71,9 @@ async function transactions(port: number) {
     }
 }
 
-async function send(name: string, port: number) {
+async function send(name: string, port: number, privateKey: Uint8Array) {
+    const from = name;
+
     const to = await input("Who do you send CT to?");
 
     const amount = await integer(
@@ -51,7 +81,14 @@ async function send(name: string, port: number) {
         "Please enter a integer",
     );
 
-    const transaction = { from: name, to, amount };
+    const message = `${from} sends ${amount}CT to ${to}`;
+    const encoder = new TextEncoder();
+
+    const signature = base64encode(
+        await ed.signAsync(encoder.encode(message), privateKey),
+    );
+
+    const transaction: Transaction = { from, to, amount, message, signature };
 
     const response = await fetch(`http://localhost:${port}/send`, {
         method: "POST",
@@ -79,18 +116,20 @@ export async function wallet(name: string) {
             true,
         );
 
-        if (newWallet) {
-            await init(name);
-        } else {
+        const success = newWallet && (await init(name));
+
+        if (!success) {
             console.log("See you again 👋");
             return;
         }
     }
 
     const db = await getDB(name);
-    const { nodePortNumber: port } = db.data;
+    const { nodePortNumber, privateKey: key } = db.data;
 
-    for (;;) {
+    const privateKey = base64decode(key);
+
+    for (; ;) {
         const operation = (await list("What are you doing?", [
             "Show Transactions",
             "Send CT",
@@ -99,10 +138,10 @@ export async function wallet(name: string) {
 
         switch (operation) {
             case "Show Transactions":
-                await transactions(port);
+                await transactions(nodePortNumber);
                 break;
             case "Send CT":
-                await send(name, port);
+                await send(name, nodePortNumber, privateKey);
                 break;
             case "Quit":
                 console.log("See you again 👋");
