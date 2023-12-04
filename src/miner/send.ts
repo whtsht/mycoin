@@ -1,7 +1,10 @@
 import { Low } from "lowdb";
-import { Data, Route, Transaction } from "./index.js";
+import { Data, Route } from "./index.js";
 import * as ed from "@noble/ed25519";
 import { base64decode } from "../codec.js";
+import { Transaction } from "./transactions.js";
+
+export type SendResult = "OK" | { errorMessage: string };
 
 export function route(db: Low<Data>): Route {
     return async (req, res) => {

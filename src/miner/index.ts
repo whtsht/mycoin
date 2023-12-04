@@ -6,16 +6,7 @@ import { config, portNumber } from "../inputUtility.js";
 import * as transactions from "./transactions.js";
 import * as send from "./send.js";
 import * as publicKey from "./publicKey.js";
-
-export type Transaction = {
-    from: string;
-    to: string;
-    amount: number;
-    message: string;
-    signature: string;
-};
-
-export type SendResult = "OK" | { errorMessage: string };
+import { Transaction } from "./transactions.js";
 
 type MinerConfig = { portNumber: number };
 
@@ -60,7 +51,7 @@ async function createNewDB(name: string) {
     console.log(`Wallet initialization completed on ${minerPath(name)}`);
 }
 
-async function initDB(name: string) {
+async function initDB(name: string): Promise<boolean> {
     if (!fs.existsSync(minerPath(name))) {
         const newMiner = await config(
             "You are not registered. Would you like to register a new one?",
@@ -70,14 +61,17 @@ async function initDB(name: string) {
         if (newMiner) {
             await createNewDB(name);
         } else {
-            console.log("See you again 👋");
-            return;
+            return false;
         }
     }
+    return true;
 }
 
 export async function miner(name: string) {
-    await initDB(name);
+    if (!(await initDB(name))) {
+        console.log("See you again 👋");
+        return;
+    }
 
     const db = await getDB(name);
     const port = db.data.config.portNumber;

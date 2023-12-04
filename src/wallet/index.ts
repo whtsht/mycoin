@@ -1,10 +1,11 @@
-import { SendResult, Transaction } from "../miner/index.js";
 import fs from "node:fs";
 import { JSONPreset } from "lowdb/node";
 import * as ed from "@noble/ed25519";
 import { config, input, portNumber, list, integer } from "../inputUtility.js";
 import { ResultSendPublicKey, SendPublicKeyData } from "../miner/publicKey.js";
 import { base64decode, base64encode } from "../codec.js";
+import { Transaction } from "../miner/transactions.js";
+import { SendResult } from "../miner/send.js";
 
 type Wallet = {
     name: string;
